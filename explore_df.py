@@ -1,33 +1,29 @@
 # using pandas
 def analyze_dataframe(df):
-    # Initialize the result dictionary
-    results = {
-        'missing_data_per_row': {},
-        'columns_analysis': {}
-    }
+    # Prepare the DataFrame for the analysis results
+    analysis_df = pd.DataFrame(index=df.columns, columns=[
+        'Data Type', 'Column Type', 'Missing Data Count', 'Distinct Values Count', 'First 5 Distinct Values'
+    ])
     
-    # Identify missing data per row
-    results['missing_data_per_row'] = df.isnull().sum(axis=1).to_dict()
-    
-    # Analyze each column
+    # Fill in the analysis results
     for column in df.columns:
-        column_data = df[column]
-        column_info = {
-            'data_type': column_data.dtype.name,
-            'distinct_values': column_data.dropna().unique().tolist()
-        }
+        data_type = df[column].dtype.name
+        distinct_values = df[column].dropna().unique()
+        distinct_values_count = len(distinct_values)
+        first_5_values = ', '.join([str(v) for v in distinct_values[:5]])
         
-        # Determine if categorical or numerical
-        if column_data.dtype.name in ['object', 'category', 'bool']:
-            column_info['type'] = 'Categorical'
+        analysis_df.loc[column, 'Data Type'] = data_type
+        analysis_df.loc[column, 'Missing Data Count'] = df[column].isnull().sum()
+        analysis_df.loc[column, 'Distinct Values Count'] = distinct_values_count
+        analysis_df.loc[column, 'First 5 Distinct Values'] = first_5_values
+        
+        # Determine column type
+        if data_type in ['object', 'category', 'bool']:
+            analysis_df.loc[column, 'Column Type'] = 'Categorical'
         else:
-            # For numerical data, further identify binary or other types
-            distinct_vals = column_info['distinct_values']
-            if len(distinct_vals) == 2:
-                column_info['type'] = 'Binary'
+            if distinct_values_count == 2:
+                analysis_df.loc[column, 'Column Type'] = 'Binary'
             else:
-                column_info['type'] = 'Numerical'
-        
-        results['columns_analysis'][column] = column_info
+                analysis_df.loc[column, 'Column Type'] = 'Numerical'
     
-    return results
+    return analysis_df
